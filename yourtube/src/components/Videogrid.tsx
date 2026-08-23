@@ -3,15 +3,20 @@ import Videocard from "./videocard";
 import axiosInstance from "@/lib/axiosinstance";
 
 const Videogrid = () => {
-  const [videos, setvideo] = useState<any>(null);
+  const [videos, setvideo] = useState<any>([]);
   const [loading, setloading] = useState(true);
   useEffect(() => {
     const fetchvideo = async () => {
       try {
         const res = await axiosInstance.get("/video/getall");
-        setvideo(res.data);
+        if (res.data && Array.isArray(res.data)) {
+          setvideo(res.data);
+        } else {
+          setvideo([]);
+        }
       } catch (error) {
         console.log(error);
+        setvideo([]);
       } finally {
         setloading(false);
       }
@@ -52,7 +57,7 @@ const Videogrid = () => {
       {loading ? (
         <>Loading..</>
       ) : (
-        videos.map((video: any) => <Videocard key={video._id} video={video} />)
+        Array.isArray(videos) && videos.map((video: any) => <Videocard key={video._id} video={video} />)
       )}
     </div>
   );

@@ -1,4 +1,5 @@
 import video from "../Modals/video.js";
+import User from "../Modals/Auth.js";
 
 export const uploadvideo = async (req, res) => {
   if (req.file === undefined) {
@@ -24,10 +25,33 @@ export const uploadvideo = async (req, res) => {
     }
   }
 };
+
 export const getallvideo = async (req, res) => {
   try {
     const files = await video.find();
-    return res.status(200).send(files);
+    
+    // Check if user is authenticated via x-user-id header
+    const userId = req.headers["x-user-id"];
+    let isUserPremium = false;
+    
+    if (userId) {
+      const user = await User.findById(userId);
+      if (user && ["bronze", "silver", "gold", "premium"].includes(user.plan)) {
+        isUserPremium = true;
+      }
+    }
+
+    // Strip filepath for premium videos if user is not premium (Req #12 backend enforcement)
+    const secureFiles = files.map(file => {
+      const fileObj = file.toObject();
+      if (fileObj.isPremium && !isUserPremium) {
+        // Obfuscate filepath so it cannot be directly accessed or downloaded
+        fileObj.filepath = "premium-locked";
+      }
+      return fileObj;
+    });
+
+    return res.status(200).send(secureFiles);
   } catch (error) {
     console.error(" error:", error);
     return res.status(500).json({ message: "Something went wrong" });
