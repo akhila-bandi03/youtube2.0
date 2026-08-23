@@ -35,7 +35,7 @@ export const UserProvider = ({ children }) => {
 
   // Sync theme class with document root
   useEffect(() => {
-    const activeTheme = user?.theme || getISTDefaultTheme();
+    const activeTheme = (!user?.theme || user?.theme === "auto") ? getISTDefaultTheme() : user.theme;
     setTheme(activeTheme);
   }, [user]);
 
