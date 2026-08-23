@@ -65,7 +65,7 @@ const index = () => {
   if (loading) {
     return <div>Loading..</div>;
   }
-  
+
   const isPremiumLocked = videos.isPremium && (!user || user.plan === "free" || !user.plan);
 
   if (!videos) {
@@ -96,8 +96,8 @@ const index = () => {
                 </a>
               </div>
             ) : (
-              <Videopplayer 
-                video={videos} 
+              <Videopplayer
+                video={videos}
                 nextVideoId={(() => {
                   if (!video || !Array.isArray(video)) return undefined;
                   const currentIndex = video.findIndex((v: any) => v._id === id);
@@ -105,11 +105,11 @@ const index = () => {
                     return video[currentIndex + 1]._id;
                   }
                   return video[0]?._id; // loop back to first
-                })()} 
+                })()}
               />
             )}
             <VideoInfo video={videos} />
-            <Comments videoId={id as string} />
+            <Comments videoId={id} />
           </div>
           <div className="space-y-4">
             <RelatedVideos videos={video} />

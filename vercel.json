@@ -1,5 +1,10 @@
 {
-  "buildCommand": "cd yourtube && npm install && npm run build",
-  "outputDirectory": "yourtube/.next",
-  "framework": "nextjs"
+  "name": "youtube2.0-root",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "npm --prefix yourtube run dev",
+    "build": "npm --prefix yourtube run build",
+    "start": "npm --prefix yourtube start"
+  }
 }
