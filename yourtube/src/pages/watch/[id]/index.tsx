@@ -109,7 +109,7 @@ const index = () => {
               />
             )}
             <VideoInfo video={videos} />
-            <Comments videoId={id} />
+            <Comments videoId={id as string} />
           </div>
           <div className="space-y-4">
             <RelatedVideos videos={video} />
