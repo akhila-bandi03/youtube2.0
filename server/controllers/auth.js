@@ -41,21 +41,40 @@ export const login = async (req, res) => {
         await existingUser.save();
 
         try {
-          let testAccount = await nodemailer.createTestAccount();
-          const transporter = nodemailer.createTransport({
-            host: "smtp.ethereal.email",
-            port: 587,
-            secure: false,
-            auth: { user: testAccount.user, pass: testAccount.pass },
-          });
+          let transporter;
+          const emailUser = process.env.EMAIL_USER;
+          const emailPass = process.env.EMAIL_PASS;
+
+          if (emailUser && emailPass) {
+            transporter = nodemailer.createTransport({
+              service: "gmail",
+              auth: {
+                user: emailUser,
+                pass: emailPass,
+              },
+            });
+          } else {
+            let testAccount = await nodemailer.createTestAccount();
+            transporter = nodemailer.createTransport({
+              host: "smtp.ethereal.email",
+              port: 587,
+              secure: false,
+              auth: { user: testAccount.user, pass: testAccount.pass },
+            });
+          }
 
           const info = await transporter.sendMail({
-            from: '"YourTubeIN Security" <security@yourtube.in>',
+            from: emailUser ? `"YourTubeIN Security" <${emailUser}>` : '"YourTubeIN Security" <security@yourtube.in>',
             to: email,
             subject: "Your Login Verification Code",
             html: `<p>We detected a login attempt from a new device or location.</p><p>Your OTP is: <strong>${otp}</strong> (Expires in 5 minutes)</p>`,
           });
-          console.log(`[OTP Email Sent] Preview URL: ${nodemailer.getTestMessageUrl(info)}`);
+
+          if (emailUser && emailPass) {
+            console.log(`[OTP Email Sent] Real email delivered to: ${email}`);
+          } else {
+            console.log(`[OTP Email Sent] Preview URL: ${nodemailer.getTestMessageUrl(info)}`);
+          }
         } catch (mailErr) {
           console.error("Failed to send OTP email:", mailErr);
         }
