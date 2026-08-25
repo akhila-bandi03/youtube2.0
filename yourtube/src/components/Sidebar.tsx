@@ -8,6 +8,7 @@ import {
   User,
   Download,
   Sparkles,
+  Users,
 } from "lucide-react";
 import Link from "next/link";
 import React, { useState } from "react";
@@ -66,6 +67,12 @@ const Sidebar = () => {
                 <Button variant="ghost" className="w-full justify-start">
                   <Download className="w-5 h-5 mr-3" />
                   Downloads
+                </Button>
+              </Link>
+              <Link href="/watch-party">
+                <Button variant="ghost" className="w-full justify-start text-indigo-600 dark:text-indigo-400 font-semibold hover:text-indigo-700">
+                  <Users className="w-5 h-5 mr-3" />
+                  Watch Party 🎉
                 </Button>
               </Link>
               <Link href="/upgrade">

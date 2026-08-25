@@ -1,13 +1,23 @@
 import { onAuthStateChanged, signInWithPopup, signOut } from "firebase/auth";
-import { useState, useEffect, createContext, useContext } from "react";
+import { useState, useEffect, createContext, useContext, useCallback } from "react";
 import { provider, auth } from "./firebase";
 import axiosInstance from "./axiosinstance";
+import dynamic from "next/dynamic";
+
+// Dynamically import OtpModal to avoid SSR issues
+const OtpModal = dynamic(() => import("@/components/OtpModal"), { ssr: false });
 
 const UserContext = createContext();
 
 export const UserProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [user, setUser]   = useState(null);
+  const [theme, setTheme] = useState("dark");
 
+  // OTP modal state — replaces browser prompt()
+  const [otpState, setOtpState] = useState(null);
+  // otpState shape: { message: string, userId: string, location: string, device: string }
+
+  // ─── Restore user from localStorage on mount ───
   useEffect(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("user");
@@ -22,23 +32,24 @@ export const UserProvider = ({ children }) => {
     }
   }, []);
 
-  const [theme, setTheme] = useState("dark");
-
+  // ─── IST-based default theme: light 10am–12pm, dark otherwise ───
   const getISTDefaultTheme = () => {
-    const d = new Date();
-    // Convert to IST (UTC + 5:30)
+    const d   = new Date();
     const utc = d.getTime() + d.getTimezoneOffset() * 60000;
     const ist = new Date(utc + 3600000 * 5.5);
     const hour = ist.getHours();
     return hour >= 10 && hour < 12 ? "light" : "dark";
   };
 
-  // Sync theme class with document root
+  // Sync theme from user profile (saved in DB) or IST default
   useEffect(() => {
-    const activeTheme = (!user?.theme || user?.theme === "auto") ? getISTDefaultTheme() : user.theme;
+    const activeTheme = (!user?.theme || user?.theme === "auto")
+      ? getISTDefaultTheme()
+      : user.theme;
     setTheme(activeTheme);
   }, [user]);
 
+  // Apply theme class to <html> root
   useEffect(() => {
     if (typeof window !== "undefined") {
       const root = window.document.documentElement;
@@ -47,6 +58,7 @@ export const UserProvider = ({ children }) => {
     }
   }, [theme]);
 
+  // ─── Manual theme toggle — persists to DB ───
   const toggleTheme = async () => {
     const nextTheme = theme === "light" ? "dark" : "light";
     setTheme(nextTheme);
@@ -68,23 +80,21 @@ export const UserProvider = ({ children }) => {
     localStorage.setItem("user", JSON.stringify(fullUser));
   };
 
+  // ─── Plan cycling for dev testing ───
   const togglePlan = async () => {
     if (!user) return;
-    // Cycle through all plan tiers so every limit can be tested
-    const planOrder = ["free", "bronze", "silver", "gold"];
-    const currentIdx = planOrder.indexOf(user.plan || "free");
-    const nextPlan = planOrder[(currentIdx + 1) % planOrder.length];
+    const planOrder   = ["free", "bronze", "silver", "gold"];
+    const currentIdx  = planOrder.indexOf(user.plan || "free");
+    const nextPlan    = planOrder[(currentIdx + 1) % planOrder.length];
 
     const updatedUser = { ...user, plan: nextPlan };
     setUser(updatedUser);
     localStorage.setItem("user", JSON.stringify(updatedUser));
 
-    // Persist plan change to database
     try {
       await axiosInstance.patch(`/user/plan/${user._id}`, { plan: nextPlan });
     } catch (err) {
       console.error("Failed to save plan to DB:", err);
-      // Still update locally so testing continues
     }
 
     alert(`Plan switched to ${nextPlan.toUpperCase()} (Downloads/day: free=1, bronze=3, silver=5, gold=50)`);
@@ -100,11 +110,44 @@ export const UserProvider = ({ children }) => {
     }
   };
 
+  // ─── OTP verification via modal (replaces browser prompt) ───
+  const showOtpModal = useCallback((message, userId, location, device) => {
+    return new Promise((resolve, reject) => {
+      setOtpState({
+        message,
+        onVerify: async (otpCode) => {
+          setOtpState(null);
+          try {
+            const verifyRes = await axiosInstance.post("/user/verify-otp", {
+              userId,
+              otpCode,
+              location,
+              device,
+            });
+            if (verifyRes.data.success) {
+              login(verifyRes.data.result);
+              resolve(verifyRes.data.result);
+            } else {
+              reject(new Error("OTP verification failed"));
+            }
+          } catch (err) {
+            reject(err);
+          }
+        },
+        onCancel: () => {
+          setOtpState(null);
+          reject(new Error("Verification cancelled"));
+        },
+      });
+    });
+  }, []);
+
+  // ─── Core login flow ───
   const processLogin = async (payload) => {
     // 1. Get approximate IP location
     let location = "Hyderabad, IN";
     try {
-      const geoRes = await fetch("https://ipapi.co/json/");
+      const geoRes  = await fetch("https://ipapi.co/json/");
       const geoData = await geoRes.json();
       if (geoData.city && geoData.region) {
         location = `${geoData.city}, ${geoData.region}`;
@@ -113,35 +156,29 @@ export const UserProvider = ({ children }) => {
       console.log("Geo lookup failed, using default fallback location", e);
     }
 
-    // 2. Identify device user-agent
-    const device = navigator.userAgent;
+    const device       = navigator.userAgent;
     const loginPayload = { ...payload, location, device };
 
     try {
       const response = await axiosInstance.post("/user/login", loginPayload);
-      const data = response.data;
+      const data     = response.data;
 
       if (data.requiresOtp) {
-        // Show OTP dialog prompt
-        const otpCode = prompt(
-          `${data.message}\n\nA security code has been sent to your registered email address.`
-        );
-
-        if (!otpCode) {
-          alert("Verification is required to proceed.");
-          return;
-        }
-
-        const verifyRes = await axiosInstance.post("/user/verify-otp", {
-          userId: data.userId,
-          otpCode,
-          location,
-          device
-        });
-
-        if (verifyRes.data.success) {
-          login(verifyRes.data.result);
-          alert("Security verification successful. Welcome back!");
+        // Show proper modal instead of browser prompt()
+        try {
+          await showOtpModal(
+            data.message ||
+              "A security code has been sent to your registered email address.",
+            data.userId,
+            location,
+            device
+          );
+          // login() is called inside onVerify after successful verification
+        } catch (otpErr) {
+          if (otpErr?.message !== "Verification cancelled") {
+            const msg = otpErr?.response?.data?.error || otpErr?.message || "OTP verification failed.";
+            alert(`⚠️ ${msg}`);
+          }
         }
       } else {
         login(data.result);
@@ -152,13 +189,14 @@ export const UserProvider = ({ children }) => {
     }
   };
 
+  // ─── Google Sign-In ───
   const handlegooglesignin = async () => {
     try {
-      const result = await signInWithPopup(auth, provider);
+      const result      = await signInWithPopup(auth, provider);
       const firebaseuser = result.user;
       const payload = {
         email: firebaseuser.email,
-        name: firebaseuser.displayName,
+        name:  firebaseuser.displayName,
         image: firebaseuser.photoURL || "https://github.com/shadcn.png",
       };
       await processLogin(payload);
@@ -166,20 +204,21 @@ export const UserProvider = ({ children }) => {
       console.error("Firebase auth failed, falling back to mock session:", error);
       const mockUserPayload = {
         email: "testuser@elevance.com",
-        name: "Bandi Parshamulu",
-        image: "https://github.com/shadcn.png"
+        name:  "Bandi Parshamulu",
+        image: "https://github.com/shadcn.png",
       };
       await processLogin(mockUserPayload);
     }
   };
 
+  // ─── Firebase auth state listener ───
   useEffect(() => {
-    const unsubcribe = onAuthStateChanged(auth, async (firebaseuser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseuser) => {
       if (firebaseuser) {
         try {
           const payload = {
             email: firebaseuser.email,
-            name: firebaseuser.displayName,
+            name:  firebaseuser.displayName,
             image: firebaseuser.photoURL || "https://github.com/shadcn.png",
           };
           await processLogin(payload);
@@ -189,12 +228,24 @@ export const UserProvider = ({ children }) => {
         }
       }
     });
-    return () => unsubcribe();
+    return () => unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
-    <UserContext.Provider value={{ user, login, logout, handlegooglesignin, togglePlan, theme, toggleTheme }}>
+    <UserContext.Provider
+      value={{ user, login, logout, handlegooglesignin, togglePlan, theme, toggleTheme }}
+    >
       {children}
+
+      {/* OTP Modal — rendered here so it overlays the whole app */}
+      {otpState && (
+        <OtpModal
+          message={otpState.message}
+          onVerify={otpState.onVerify}
+          onCancel={otpState.onCancel}
+        />
+      )}
     </UserContext.Provider>
   );
 };

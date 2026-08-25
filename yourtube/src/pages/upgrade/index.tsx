@@ -292,9 +292,11 @@ export default function UpgradePage() {
           {plans.map((plan) => {
             const isCurrent = user?.plan === plan.id || (!user?.plan && plan.id === "free");
             return (
-              <div 
+            <div 
                 key={plan.id}
-                className={`flex flex-col justify-between p-6 rounded-2xl border-2 bg-white ${plan.color} min-h-[460px] transition-all duration-300 hover:shadow-xl`}
+                className={`flex flex-col justify-between p-6 rounded-2xl border-2 relative ${plan.color} min-h-[460px] transition-all duration-300 hover:shadow-xl ${
+                  isCurrent ? "ring-4 ring-violet-500/60 scale-[1.02]" : ""
+                }`}
               >
                 <div className="space-y-4">
                   {plan.id === "gold" && (

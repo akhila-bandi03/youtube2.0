@@ -189,7 +189,7 @@ const VideoInfo = ({ video }: any) => {
           <Button className="ml-auto sm:ml-4 text-xs h-8 px-3">Subscribe</Button>
         </div>
         <div className="flex flex-wrap items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
-          <div className="flex items-center bg-gray-100 rounded-full">
+          <div className="flex items-center bg-gray-100 dark:bg-slate-800 rounded-full">
             <Button
               variant="ghost"
               size="sm"
@@ -198,12 +198,12 @@ const VideoInfo = ({ video }: any) => {
             >
               <ThumbsUp
                 className={`w-5 h-5 mr-2 ${
-                  isLiked ? "fill-black text-black" : ""
+                  isLiked ? "fill-slate-900 dark:fill-slate-100 text-slate-900 dark:text-slate-100" : ""
                 }`}
               />
               {likes.toLocaleString()}
             </Button>
-            <div className="w-px h-6 bg-gray-300" />
+            <div className="w-px h-6 bg-gray-300 dark:bg-slate-700" />
             <Button
               variant="ghost"
               size="sm"
@@ -212,7 +212,7 @@ const VideoInfo = ({ video }: any) => {
             >
               <ThumbsDown
                 className={`w-5 h-5 mr-2 ${
-                  isDisliked ? "fill-black text-black" : ""
+                  isDisliked ? "fill-slate-900 dark:fill-slate-100 text-slate-900 dark:text-slate-100" : ""
                 }`}
               />
               {dislikes.toLocaleString()}
@@ -221,8 +221,8 @@ const VideoInfo = ({ video }: any) => {
           <Button
             variant="ghost"
             size="sm"
-            className={`bg-gray-100 rounded-full ${
-              isWatchLater ? "text-primary" : ""
+            className={`bg-gray-100 dark:bg-slate-800 rounded-full ${
+              isWatchLater ? "text-primary dark:text-violet-400" : ""
             }`}
             onClick={handleWatchLater}
           >
@@ -232,7 +232,7 @@ const VideoInfo = ({ video }: any) => {
           <Button
             variant="ghost"
             size="sm"
-            className="bg-gray-100 rounded-full"
+            className="bg-gray-100 dark:bg-slate-800 rounded-full"
           >
             <Share className="w-5 h-5 mr-2" />
             Share
@@ -241,7 +241,7 @@ const VideoInfo = ({ video }: any) => {
             variant="ghost"
             size="sm"
             onClick={handleDownload}
-            className="bg-gray-100 rounded-full hover:bg-gray-200 transition"
+            className="bg-gray-100 dark:bg-slate-800 rounded-full hover:bg-gray-200 dark:hover:bg-slate-700 transition"
           >
             <Download className="w-5 h-5 mr-2" />
             Download
@@ -250,25 +250,25 @@ const VideoInfo = ({ video }: any) => {
             variant="ghost"
             size="sm"
             onClick={handleCreateWatchParty}
-            className="bg-gray-100 rounded-full hover:bg-gray-200 transition text-violet-600 font-semibold flex items-center"
+            className="bg-gray-100 dark:bg-slate-800 rounded-full hover:bg-gray-200 dark:hover:bg-slate-700 transition text-violet-650 dark:text-violet-400 font-semibold flex items-center"
           >
             🎉 Create Watch Party
           </Button>
           <Button
             variant="ghost"
             size="icon"
-            className="bg-gray-100 rounded-full"
+            className="bg-gray-100 dark:bg-slate-800 rounded-full"
           >
             <MoreHorizontal className="w-5 h-5" />
           </Button>
         </div>
       </div>
-      <div className="bg-gray-100 rounded-lg p-4">
-        <div className="flex gap-4 text-sm font-medium mb-2">
+      <div className="bg-gray-100 dark:bg-slate-800/40 rounded-lg p-4">
+        <div className="flex gap-4 text-sm font-medium mb-2 text-slate-800 dark:text-slate-200">
           <span>{video.views.toLocaleString()} views</span>
           <span>{formatDistanceToNow(new Date(video.createdAt))} ago</span>
         </div>
-        <div className={`text-sm ${showFullDescription ? "" : "line-clamp-3"}`}>
+        <div className={`text-sm text-slate-700 dark:text-slate-350 ${showFullDescription ? "" : "line-clamp-3"}`}>
           <p>
             Sample video description. This would contain the actual video
             description from the database.

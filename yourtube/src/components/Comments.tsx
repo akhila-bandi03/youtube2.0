@@ -423,10 +423,10 @@ const Comments = ({ videoId }: { videoId: string }) => {
   }
 
   return (
-    <div className="space-y-6 text-slate-800 bg-transparent">
+    <div className="space-y-6 text-slate-800 dark:text-slate-200 bg-transparent">
       {/* Header row */}
-      <div className="flex justify-between items-center border-b border-slate-200 pb-3">
-        <h2 className="text-lg font-bold text-slate-850">{comments.length} Comments</h2>
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center border-b border-slate-200 dark:border-slate-800 pb-3 gap-3">
+        <h2 className="text-lg font-bold text-slate-850 dark:text-slate-100">{comments.length} Comments</h2>
         <div className="flex items-center gap-3">
           {/* Global translation target language (Req #2) */}
           <div className="flex items-center gap-1.5 text-xs text-slate-400">
@@ -434,7 +434,7 @@ const Comments = ({ videoId }: { videoId: string }) => {
             <select
               value={preferredTargetLang}
               onChange={(e) => setPreferredTargetLang(e.target.value)}
-              className="bg-white border border-slate-300 text-slate-700 rounded px-2 py-1 outline-none text-xs"
+              className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded px-2 py-1 outline-none text-xs"
             >
               <option value="te">Telugu (తెలుగు)</option>
               <option value="en">English</option>
@@ -523,18 +523,18 @@ const Comments = ({ videoId }: { videoId: string }) => {
               placeholder="Add a respectful comment... (abusive words, spam, and excessive symbols are auto-blocked)"
               value={newComment}
               onChange={(e: any) => setNewComment(e.target.value)}
-              className="min-h-[80px] bg-white border border-slate-300 rounded-lg text-slate-800 placeholder-slate-400 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 text-sm"
+              className="min-h-[80px] bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 text-sm"
             />
 
             <div className="flex flex-wrap justify-between items-center gap-3">
               <div className="flex items-center gap-4 text-xs">
                 {/* Language selector (Req #1) */}
                 <div className="flex items-center gap-1.5">
-                  <span className="text-slate-500">Language:</span>
+                  <span className="text-slate-500 dark:text-slate-400">Language:</span>
                   <select
                     value={commentLang}
                     onChange={(e) => setCommentLang(e.target.value)}
-                    className="bg-white border border-slate-300 text-slate-700 rounded px-2 py-1 outline-none text-xs"
+                    className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded px-2 py-1 outline-none text-xs"
                   >
                     <option value="en">English</option>
                     <option value="te">Telugu (తెలుగు)</option>
@@ -547,7 +547,7 @@ const Comments = ({ videoId }: { videoId: string }) => {
                 </div>
 
                 {/* Optional location sharing — approximate region only (Req #4) */}
-                <label className="flex items-center gap-2 cursor-pointer text-slate-600">
+                <label className="flex items-center gap-2 cursor-pointer text-slate-600 dark:text-slate-400">
                   <input
                     type="checkbox"
                     checked={shareLocation}
@@ -563,7 +563,7 @@ const Comments = ({ videoId }: { videoId: string }) => {
                   variant="ghost"
                   onClick={() => { setNewComment(""); setShareLocation(false); }}
                   disabled={!newComment.trim()}
-                  className="text-slate-600 hover:text-slate-900 text-sm"
+                  className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-sm"
                 >
                   Cancel
                 </Button>
@@ -619,13 +619,13 @@ const Comments = ({ videoId }: { videoId: string }) => {
                 <div className="flex-1 space-y-1.5 min-w-0">
                   {/* Username + time + language badge + location (Req #3, #4) */}
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-bold text-sm text-slate-800">{comment.username}</span>
+                    <span className="font-bold text-sm text-slate-800 dark:text-slate-200">{comment.username}</span>
                     <span className="text-xs text-slate-500">
                       {comment.createdAt
                         ? formatDistanceToNow(new Date(comment.createdAt)) + " ago"
                         : "just now"}
                     </span>
-                    <span className="text-[10px] bg-violet-100 text-violet-700 border border-violet-200 px-1.5 py-0.5 rounded font-mono uppercase">
+                    <span className="text-[10px] bg-violet-100 dark:bg-violet-950/60 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-800 px-1.5 py-0.5 rounded font-mono uppercase">
                       {comment.language || "en"}
                     </span>
                     {/* Location shown ONLY if user opted in — never exact city (Req #4) */}
@@ -674,7 +674,7 @@ const Comments = ({ videoId }: { videoId: string }) => {
                   ) : (
                     <>
                       {/* Comment text */}
-                      <p className={`text-sm text-slate-800 break-words ${isReported ? "opacity-70" : ""}`}>
+                      <p className={`text-sm text-slate-800 dark:text-slate-200 break-words ${isReported ? "opacity-70" : ""}`}>
                         {comment.comment}
                       </p>
 
@@ -688,16 +688,16 @@ const Comments = ({ videoId }: { videoId: string }) => {
                         <div className="text-xs text-red-500 py-1 font-medium">⚠️ {translationError}</div>
                       )}
                       {translation && (
-                        <div className="bg-violet-50 border-l-4 border-violet-500 p-2.5 rounded-r my-1.5 text-xs">
+                        <div className="bg-violet-50 dark:bg-violet-950/30 border-l-4 border-violet-500 p-2.5 rounded-r my-1.5 text-xs">
                           <div className="text-[10px] text-violet-600 font-semibold mb-0.5">
                             🌐 Translated to {translation.langName}
                           </div>
-                          <div className="text-slate-700 italic">"{translation.text}"</div>
+                          <div className="text-slate-700 dark:text-slate-300 italic">"{translation.text}"</div>
                         </div>
                       )}
 
                       {/* Action buttons */}
-                      <div className="flex items-center justify-between text-xs text-slate-500 pt-1">
+                      <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between text-xs text-slate-500 dark:text-slate-400 pt-1">
                         <div className="flex items-center gap-3 flex-wrap">
                           {/* Like (Req #8) */}
                           <button
@@ -738,12 +738,12 @@ const Comments = ({ videoId }: { videoId: string }) => {
                             <span>{isReported ? "Flagged" : reportedComments.has(comment._id) ? "Reported" : "Report"}</span>
                           </button>
 
-                          {/* Translate (Req #2) */}
+                           {/* Translate (Req #2) */}
                           <button
                             onClick={() => handleTranslate(comment)}
                             disabled={translatingId === comment._id}
                             title="Translate this comment"
-                            className="flex items-center gap-1.5 px-2.5 py-1 bg-violet-900/20 border border-violet-500/30 text-violet-400 rounded-full hover:bg-violet-900/40 hover:text-violet-200 font-medium transition-all duration-150 text-[11px]"
+                            className="flex items-center gap-1.5 px-2.5 py-1 bg-violet-150 dark:bg-violet-900/20 border border-violet-300 dark:border-violet-500/30 text-violet-750 dark:text-violet-400 rounded-full hover:bg-violet-200 dark:hover:bg-violet-900/40 hover:text-violet-900 dark:hover:text-violet-250 font-medium transition-all duration-150 text-[11px]"
                           >
                             🌐 {translation ? "Hide" : "Translate"}
                           </button>
