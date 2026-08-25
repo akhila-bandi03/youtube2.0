@@ -17,13 +17,15 @@ import watchpartyroutes from "./routes/watchparty.js";
 const app = express();
 const httpServer = createServer(app);
 
-
-export const io = new Server(httpServer, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"],
-  }
-});
+// Socket.io is NOT supported on Vercel Serverless — skip it entirely
+let _io = null;
+if (!process.env.VERCEL) {
+  const { Server } = await import("socket.io");
+  _io = new Server(httpServer, {
+    cors: { origin: "*", methods: ["GET", "POST"] }
+  });
+}
+export const io = _io ?? { on: () => {} }; // no-op dummy on Vercel
 
 import path from "path";
 
@@ -67,51 +69,34 @@ app.use("/comment", commentroutes);
 app.use("/api", apiroutes);
 app.use("/watchparty", watchpartyroutes);
 
-// Socket.IO Logic
-io.on("connection", (socket) => {
-  console.log("New socket connected:", socket.id);
+// Socket.IO Logic — only active when NOT on Vercel
+if (!process.env.VERCEL && io && typeof io.on === "function" && io.on.length > 0) {
+  io.on("connection", (socket) => {
+    console.log("New socket connected:", socket.id);
 
-  socket.on("join-room", (roomId, userId, userName) => {
-    socket.join(roomId);
-    socket.to(roomId).emit("user-connected", userId, userName);
-    console.log(`User ${userName} (${userId}) joined room ${roomId}`);
+    socket.on("join-room", (roomId, userId, userName) => {
+      socket.join(roomId);
+      socket.to(roomId).emit("user-connected", userId, userName);
+      console.log(`User ${userName} (${userId}) joined room ${roomId}`);
 
-    socket.on("disconnect", () => {
-      socket.to(roomId).emit("user-disconnected", userId);
-      console.log(`User ${userName} (${userId}) left room ${roomId}`);
+      socket.on("disconnect", () => {
+        socket.to(roomId).emit("user-disconnected", userId);
+        console.log(`User ${userName} (${userId}) left room ${roomId}`);
+      });
     });
-  });
 
-  socket.on("chat-message", (roomId, message) => {
-    socket.to(roomId).emit("chat-message", message);
-  });
+    socket.on("chat-message", (roomId, message) => {
+      socket.to(roomId).emit("chat-message", message);
+    });
 
-  // Video Sync
-  socket.on("video-play", (roomId, time) => {
-    socket.to(roomId).emit("video-play", time);
+    socket.on("video-play", (roomId, time) => { socket.to(roomId).emit("video-play", time); });
+    socket.on("video-pause", (roomId, time) => { socket.to(roomId).emit("video-pause", time); });
+    socket.on("video-seek", (roomId, time) => { socket.to(roomId).emit("video-seek", time); });
+    socket.on("offer", (roomId, callerId, offer) => { socket.to(roomId).emit("offer", callerId, offer); });
+    socket.on("answer", (roomId, callerId, answer) => { socket.to(roomId).emit("answer", callerId, answer); });
+    socket.on("ice-candidate", (roomId, callerId, candidate) => { socket.to(roomId).emit("ice-candidate", callerId, candidate); });
   });
-  
-  socket.on("video-pause", (roomId, time) => {
-    socket.to(roomId).emit("video-pause", time);
-  });
-  
-  socket.on("video-seek", (roomId, time) => {
-    socket.to(roomId).emit("video-seek", time);
-  });
-
-  // WebRTC Signaling
-  socket.on("offer", (roomId, callerId, offer) => {
-    socket.to(roomId).emit("offer", callerId, offer);
-  });
-
-  socket.on("answer", (roomId, callerId, answer) => {
-    socket.to(roomId).emit("answer", callerId, answer);
-  });
-
-  socket.on("ice-candidate", (roomId, callerId, candidate) => {
-    socket.to(roomId).emit("ice-candidate", callerId, candidate);
-  });
-});
+}
 
 const PORT = process.env.PORT || 5000;
 
