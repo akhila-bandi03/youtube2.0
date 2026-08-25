@@ -15,7 +15,7 @@ import {
   AlertCircle
 } from "lucide-react";
 import { Button } from "./ui/button";
-import { getBackendUrl } from "@/lib/axiosinstance";
+import { getBackendUrl, getVideoUrl } from "@/lib/axiosinstance";
 
 interface VideoPlayerProps {
   video: {
@@ -256,7 +256,7 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(({ video, nextV
         poster={`/placeholder.svg?height=480&width=854`}
       >
         <source
-          src={`${backendUrl}/${video?.filepath}`}
+          src={getVideoUrl(video?.filepath)}
           type="video/mp4"
         />
         Your browser does not support the video tag.

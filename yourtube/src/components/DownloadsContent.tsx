@@ -5,7 +5,7 @@ import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { Download, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import axiosInstance, { getBackendUrl } from "@/lib/axiosinstance";
+import axiosInstance, { getBackendUrl, getVideoUrl } from "@/lib/axiosinstance";
 import { useUser } from "@/lib/AuthContext";
 
 // Plan limits for quota display
@@ -112,7 +112,7 @@ export default function DownloadsContent() {
                     <div className="relative w-40 aspect-video bg-black rounded-lg overflow-hidden">
                       {filepath ? (
                         <video
-                          src={`${backendBase}/${filepath}`}
+                          src={getVideoUrl(filepath)}
                           className="w-full h-full object-cover"
                           muted
                         />
@@ -161,7 +161,7 @@ export default function DownloadsContent() {
                     </span>
                     {filepath && (
                       <a
-                        href={`${backendBase}/${filepath}`}
+                        href={getVideoUrl(filepath)}
                         download={`${title}.mp4`}
                         className="flex items-center gap-1 text-violet-500 hover:text-violet-300 transition font-medium"
                       >

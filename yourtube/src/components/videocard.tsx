@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { Avatar, AvatarFallback } from "./ui/avatar";
-import { getBackendUrl } from "@/lib/axiosinstance";
+import { getBackendUrl, getVideoUrl } from "@/lib/axiosinstance";
 
 export default function VideoCard({ video }: any) {
   const backendBase = getBackendUrl();
@@ -16,7 +16,7 @@ export default function VideoCard({ video }: any) {
         <div className="space-y-2">
           <div className="relative aspect-[9/16] rounded-xl overflow-hidden bg-slate-900 shadow-md">
             <video
-              src={`${backendBase}/${video?.filepath}`}
+              src={getVideoUrl(video?.filepath)}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
               muted
               playsInline
@@ -41,7 +41,7 @@ export default function VideoCard({ video }: any) {
       <div className="space-y-3">
         <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-100 dark:bg-slate-900">
           <video
-            src={`${backendBase}/${video?.filepath}`}
+            src={getVideoUrl(video?.filepath)}
             className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-200"
           />
           <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-1 rounded font-mono">

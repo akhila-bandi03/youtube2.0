@@ -24,10 +24,19 @@ export const getBackendUrl = () => {
   return configuredBackendUrl;
 };
 
+export const getVideoUrl = (filepath) => {
+  if (!filepath) return "";
+  if (filepath.startsWith("http://") || filepath.startsWith("https://")) {
+    return filepath;
+  }
+  return `${getBackendUrl()}/${filepath}`;
+};
+
 const axiosInstance = axios.create({
   baseURL: getBackendUrl(),
 });
 
+// Dynamic interceptor to ensure requests always resolve correctly on dynamic hostnames
 axiosInstance.interceptors.request.use((config) => {
   config.baseURL = getBackendUrl();
   config.headers["bypass-tunnel-reminder"] = "true";

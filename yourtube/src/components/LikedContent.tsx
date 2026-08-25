@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useUser } from "@/lib/AuthContext";
-import axiosInstance from "@/lib/axiosinstance";
+import axiosInstance, { getVideoUrl } from "@/lib/axiosinstance";
 
 export default function LikedVideosContent() {
   const [likedVideos, setLikedVideos] = useState<any[]>([]);
@@ -93,7 +93,7 @@ export default function LikedVideosContent() {
             <Link href={`/watch/${item.videoid._id}`} className="flex-shrink-0">
               <div className="relative w-40 aspect-video bg-gray-100 rounded overflow-hidden">
                 <video
-                  src={`${process.env.BACKEND_URL}/${item.videoid?.filepath}`}
+                  src={getVideoUrl(item.videoid?.filepath)}
                   className="object-cover group-hover:scale-105 transition-transform duration-200"
                 />
               </div>
