@@ -13,9 +13,9 @@ export const getBackendUrl = () => {
       return `http://${hostname}:5000`;
     }
     // Fallback/Vercel: use the stable localtunnel URL
-    return process.env.NEXT_PUBLIC_BACKEND_URL || "https://youtube-api-backend.loca.lt";
+    return process.env.NEXT_PUBLIC_BACKEND_URL || "https://youtube-api-backend-v2.loca.lt";
   }
-  return process.env.NEXT_PUBLIC_BACKEND_URL || "https://youtube-api-backend.loca.lt";
+  return process.env.NEXT_PUBLIC_BACKEND_URL || "https://youtube-api-backend-v2.loca.lt";
 };
 
 const axiosInstance = axios.create({
