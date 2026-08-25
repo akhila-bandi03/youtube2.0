@@ -55,6 +55,32 @@ app.use("/uploads", express.static(path.join("uploads")));
 app.get("/", (req, res) => {
   res.send("You tube backend is working");
 });
+// Cached DB connection — prevents cold-start timeouts on Vercel serverless
+const DBURL = process.env.DB_URL || "mongodb://127.0.0.1:27017/youtube";
+let dbConnectionPromise = null;
+const connectDB = async () => {
+  if (mongoose.connection.readyState === 1) return; // already connected
+  if (!dbConnectionPromise) {
+    dbConnectionPromise = mongoose.connect(DBURL, {
+      serverSelectionTimeoutMS: 15000,
+      socketTimeoutMS: 45000,
+    });
+  }
+  await dbConnectionPromise;
+};
+
+// Ensure DB is connected before every request (critical for Vercel cold starts)
+app.use(async (req, res, next) => {
+  if (req.path === "/" || req.path === "/debug") return next(); // skip for health checks
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    console.error("DB connection failed:", err.message);
+    res.status(503).json({ error: "Database unavailable. Please try again." });
+  }
+});
+
 app.use(bodyParser.json());
 app.use("/user", userroutes);
 app.use("/video", videoroutes);
@@ -119,36 +145,7 @@ if (!process.env.VERCEL) {
 import CommentModel from "./Modals/comment.js";
 import VideoModel from "./Modals/video.js";
 
-const DBURL = process.env.DB_URL || "mongodb://127.0.0.1:27017/youtube";
-
-// Cached connection for Vercel serverless (reuse across warm invocations)
-let dbConnectionPromise = null;
-
-const connectDB = async () => {
-  // If already connected, return immediately
-  if (mongoose.connection.readyState === 1) return;
-  // If a connection is in progress, wait for it
-  if (!dbConnectionPromise) {
-    dbConnectionPromise = mongoose.connect(DBURL, {
-      serverSelectionTimeoutMS: 15000,
-      socketTimeoutMS: 45000,
-    });
-  }
-  await dbConnectionPromise;
-};
-
-// Middleware: ensure DB connected before every request
-app.use(async (req, res, next) => {
-  try {
-    await connectDB();
-    next();
-  } catch (err) {
-    console.error("DB connection failed:", err.message);
-    res.status(503).json({ error: "Database unavailable. Please try again." });
-  }
-});
-
-// Initial connection + seed on first load
+// Run seed data on first connection
 mongoose
   .connect(DBURL)
   .then(async () => {
