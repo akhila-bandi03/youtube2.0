@@ -25,6 +25,7 @@ const axiosInstance = axios.create({
 // Dynamic interceptor to ensure requests always resolve correctly on dynamic hostnames
 axiosInstance.interceptors.request.use((config) => {
   config.baseURL = getBackendUrl();
+  config.headers["bypass-tunnel-reminder"] = "true";
   return config;
 });
 
