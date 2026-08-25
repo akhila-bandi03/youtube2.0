@@ -27,9 +27,10 @@ export const login = async (req, res) => {
     } else {
       // Existing user login check
       const currentLoc = location || "Unknown Region";
-      const currentDev = req.headers["user-agent"] || device || "Unknown Device";
+      // Use simplified device from frontend (just browser name like "Chrome Browser")
+      const currentDev = device || req.headers["user-agent"] || "Unknown Device";
 
-      // If lastLocation and lastDevice are already recorded, and either is different, trigger OTP
+      // Only trigger OTP if location OR device has meaningfully changed
       const isNewLocation = existingUser.lastLocation && existingUser.lastLocation !== currentLoc;
       const isNewDevice = existingUser.lastDevice && existingUser.lastDevice !== currentDev;
 

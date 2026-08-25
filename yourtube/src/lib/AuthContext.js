@@ -156,7 +156,13 @@ export const UserProvider = ({ children }) => {
       console.log("Geo lookup failed, using default fallback location", e);
     }
 
-    const device       = navigator.userAgent;
+    // Simplified device fingerprint — only browser name to avoid OTP loop on every page refresh
+    const ua = navigator.userAgent;
+    let device = "Unknown Browser";
+    if (ua.includes("Chrome")) device = "Chrome Browser";
+    else if (ua.includes("Firefox")) device = "Firefox Browser";
+    else if (ua.includes("Safari")) device = "Safari Browser";
+    else if (ua.includes("Edge")) device = "Edge Browser";
     const loginPayload = { ...payload, location, device };
 
     try {
@@ -215,6 +221,17 @@ export const UserProvider = ({ children }) => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseuser) => {
       if (firebaseuser) {
+        // If user already restored from localStorage, skip re-login to avoid OTP loop
+        const saved = localStorage.getItem("user");
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            if (parsed.email === firebaseuser.email) {
+              // Already logged in — no need to hit the server again
+              return;
+            }
+          } catch (e) { /* ignore */ }
+        }
         try {
           const payload = {
             email: firebaseuser.email,
@@ -224,7 +241,6 @@ export const UserProvider = ({ children }) => {
           await processLogin(payload);
         } catch (error) {
           console.error(error);
-          logout();
         }
       }
     });
