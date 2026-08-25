@@ -25,4 +25,6 @@ yarn-error.log*
 Thumbs.db
 
 # Media uploads
-server/uploads/
+server/uploads/*
+!server/uploads/nextjs_tutorial.mp4
+!server/uploads/quantumdb_launch.mp4
