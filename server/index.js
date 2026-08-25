@@ -32,7 +32,7 @@ app.use(cors({
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "x-requested-with", "bypass-tunnel-reminder", "x-user-id"],
 }));
-app.options("*", cors()); // handle preflight for all routes
+
 
 app.use(express.json({ limit: "30mb", extended: true }));
 app.use(express.urlencoded({ limit: "30mb", extended: true }));
