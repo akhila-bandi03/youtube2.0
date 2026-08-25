@@ -27,11 +27,28 @@ export const io = new Server(httpServer, {
 
 import path from "path";
 
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://youtube2-0-one.vercel.app",
+  // Add more Vercel preview URLs if needed
+];
+
 app.use(cors({
-  origin: "*",
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, Postman)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin) || origin.endsWith(".vercel.app")) {
+      return callback(null, true);
+    }
+    return callback(new Error(`CORS blocked for origin: ${origin}`));
+  },
+  credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "x-requested-with", "bypass-tunnel-reminder", "x-user-id"],
 }));
+
+// Explicit OPTIONS preflight handler — needed for localtunnel + CORS
+app.options("*", cors());
 
 
 app.use(express.json({ limit: "30mb", extended: true }));
@@ -98,9 +115,12 @@ io.on("connection", (socket) => {
 
 const PORT = process.env.PORT || 5000;
 
-httpServer.listen(PORT, () => {
-  console.log(`server running on port ${PORT}`);
-});
+// Vercel sets VERCEL=1, so we only listen manually when running locally
+if (!process.env.VERCEL) {
+  httpServer.listen(PORT, () => {
+    console.log(`server running on port ${PORT}`);
+  });
+}
 
 import CommentModel from "./Modals/comment.js";
 import VideoModel from "./Modals/video.js";
@@ -219,3 +239,6 @@ mongoose
   .catch((error) => {
     console.log(error);
   });
+
+// Export the Express API for Vercel Serverless Functions
+export default app;
