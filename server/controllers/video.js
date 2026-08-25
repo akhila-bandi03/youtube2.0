@@ -1,5 +1,6 @@
 import video from "../Modals/video.js";
 import User from "../Modals/Auth.js";
+import { io } from "../index.js";
 
 export const uploadvideo = async (req, res) => {
   if (req.file === undefined) {
@@ -17,7 +18,11 @@ export const uploadvideo = async (req, res) => {
         videochanel: req.body.videochanel,
         uploader: req.body.uploader,
       });
-      await file.save();
+      const savedVideo = await file.save();
+      
+      // Emit real-time event to all connected clients
+      io.emit("new-video", savedVideo);
+
       return res.status(201).json("file uploaded successfully");
     } catch (error) {
       console.error(" error:", error);

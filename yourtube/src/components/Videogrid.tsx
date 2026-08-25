@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import Videocard from "./videocard";
-import axiosInstance from "@/lib/axiosinstance";
+import axiosInstance, { getBackendUrl } from "@/lib/axiosinstance";
+import { io, Socket } from "socket.io-client";
 
 const CATEGORY_KEYWORDS: Record<string, string[]> = {
   music: ["music", "song", "sing", "sound", "audio", "lyric", "beat", "remix", "tune", "podcast", "vdo", "pasta"],
@@ -20,13 +21,15 @@ const CATEGORY_KEYWORDS: Record<string, string[]> = {
 const Videogrid = ({ activeCategory }: { activeCategory: string }) => {
   const [videos, setvideo] = useState<any[]>([]);
   const [loading, setloading] = useState(true);
+  const [socket, setSocket] = useState<Socket | null>(null);
 
   useEffect(() => {
     const fetchvideo = async () => {
       try {
         const res = await axiosInstance.get("/video/getall");
         if (res.data && Array.isArray(res.data)) {
-          setvideo(res.data);
+          // Newest videos first
+          setvideo(res.data.reverse());
         } else {
           setvideo([]);
         }
@@ -38,9 +41,19 @@ const Videogrid = ({ activeCategory }: { activeCategory: string }) => {
     };
     fetchvideo();
 
-    // Poll for new videos every 10 seconds to make it real-time
-    const interval = setInterval(fetchvideo, 10000);
-    return () => clearInterval(interval);
+    // Set up WebSocket connection for true real-time updates
+    const backendUrl = getBackendUrl();
+    const newSocket = io(backendUrl);
+    setSocket(newSocket);
+
+    newSocket.on("new-video", (newVideo: any) => {
+      // Add the new video to the top of the list instantly
+      setvideo((prevVideos) => [newVideo, ...prevVideos]);
+    });
+
+    return () => {
+      newSocket.disconnect();
+    };
   }, []);
 
   // 1. Separate regular videos and shorts

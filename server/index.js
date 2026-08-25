@@ -16,7 +16,7 @@ import watchpartyroutes from "./routes/watchparty.js";
 
 const app = express();
 const httpServer = createServer(app);
-const io = new Server(httpServer, {
+export const io = new Server(httpServer, {
   cors: {
     origin: "*", // allow frontend access
     methods: ["GET", "POST"]
