@@ -217,14 +217,23 @@ export const UserProvider = ({ children }) => {
   };
 
   // ─── Google Sign-In ───
-  // Uses redirect for ALL devices — eliminates all popup conflict errors.
-  // Result is handled by getRedirectResult() in the useEffect below.
+  // Uses popup instead of redirect so we don't lose React state or network logs.
   const handlegooglesignin = async () => {
     try {
-      await signInWithRedirect(auth, provider);
+      const { signInWithPopup } = await import("firebase/auth");
+      const result = await signInWithPopup(auth, provider);
+      if (result && result.user) {
+        const firebaseuser = result.user;
+        const payload = {
+          email: firebaseuser.email,
+          name:  firebaseuser.displayName,
+          image: firebaseuser.photoURL || "https://github.com/shadcn.png",
+        };
+        await processLogin(payload);
+      }
     } catch (error) {
-      console.error("Firebase redirect failed:", error);
-      alert("Google Sign-In failed. Please try again.");
+      console.error("Firebase popup failed:", error);
+      alert("Google Sign-In failed: " + error.message);
     }
   };
 
