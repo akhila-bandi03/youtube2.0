@@ -1,9 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import CategoryTabs from "@/components/category-tabs";
 import Videogrid from "@/components/Videogrid";
 import { Compass } from "lucide-react";
 
 export default function ExplorePage() {
+  const [activeCategory, setActiveCategory] = useState("All");
+
   return (
     <main className="flex-1 p-6 max-w-7xl mx-auto space-y-6">
       <div className="flex items-center gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
@@ -16,8 +18,8 @@ export default function ExplorePage() {
         </div>
       </div>
 
-      <CategoryTabs />
-      <Videogrid />
+      <CategoryTabs activeCategory={activeCategory} setActiveCategory={setActiveCategory} />
+      <Videogrid activeCategory={activeCategory} />
     </main>
   );
 }

@@ -30,7 +30,7 @@ export default function SubscriptionsPage() {
       </div>
 
       <div>
-        <Videogrid />
+        <Videogrid activeCategory="All" />
       </div>
     </main>
   );
