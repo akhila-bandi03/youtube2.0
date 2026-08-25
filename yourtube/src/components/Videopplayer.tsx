@@ -40,14 +40,6 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(({ video, nextV
   const videoRef = useRef<HTMLVideoElement>(null);
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
 
-  // Reload video source when video metadata updates
-  useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.load();
-      setIsPlaying(false);
-    }
-  }, [video]);
-  
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -59,6 +51,15 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(({ video, nextV
   const [feedback, setFeedback] = useState<"rewind" | "forward" | null>(null);
   const [hasError, setHasError] = useState(false);
   const lastTapRef = useRef<number>(0);
+
+  // Reload video source when video metadata updates
+  useEffect(() => {
+    if (videoRef.current) {
+      setHasError(false);
+      videoRef.current.load();
+      setIsPlaying(false);
+    }
+  }, [video]);
 
   useImperativeHandle(ref, () => ({
     play: (time?: number) => {
