@@ -12,6 +12,7 @@ const VideoUploader = ({ channelId, channelName, onUploadSuccess }: any) => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoTitle, setVideoTitle] = useState("");
+  const [videoType, setVideoType] = useState("video");
   const [uploadComplete, setUploadComplete] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const handlefilechange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -36,6 +37,7 @@ const VideoUploader = ({ channelId, channelName, onUploadSuccess }: any) => {
   const resetForm = () => {
     setVideoFile(null);
     setVideoTitle("");
+    setVideoType("video");
     setIsUploading(false);
     setUploadProgress(0);
     setUploadComplete(false);
@@ -54,9 +56,13 @@ const VideoUploader = ({ channelId, channelName, onUploadSuccess }: any) => {
       toast.error("Please provide file and title");
       return;
     }
+    const finalTitle = videoType === "short" && !videoTitle.toLowerCase().includes("#shorts")
+      ? `${videoTitle} #shorts`
+      : videoTitle;
+
     const formdata = new FormData();
     formdata.append("file", videoFile);
-    formdata.append("videotitle", videoTitle);
+    formdata.append("videotitle", finalTitle);
     formdata.append("videochanel", channelName);
     formdata.append("uploader", channelId);
     console.log(formdata)
@@ -138,7 +144,7 @@ const VideoUploader = ({ channelId, channelName, onUploadSuccess }: any) => {
 
             <div className="space-y-3">
               <div>
-                <Label htmlFor="title">Title (required)</Label>
+                <Label htmlFor="title" className="text-slate-700 dark:text-slate-300 font-medium">Title (required)</Label>
                 <Input
                   id="title"
                   value={videoTitle}
@@ -147,6 +153,20 @@ const VideoUploader = ({ channelId, channelName, onUploadSuccess }: any) => {
                   disabled={isUploading || uploadComplete}
                   className="mt-1"
                 />
+              </div>
+
+              <div>
+                <Label htmlFor="videoType" className="text-slate-700 dark:text-slate-300 font-medium">Upload Format</Label>
+                <select
+                  id="videoType"
+                  value={videoType}
+                  onChange={(e) => setVideoType(e.target.value)}
+                  disabled={isUploading || uploadComplete}
+                  className="mt-1 flex h-10 w-full rounded-md border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <option value="video">🎥 Regular Video (16:9 widescreen)</option>
+                  <option value="short">📱 YouTube Short (9:16 vertical)</option>
+                </select>
               </div>
             </div>
 
