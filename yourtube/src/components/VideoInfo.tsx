@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useUser } from "@/lib/AuthContext";
-import axiosInstance from "@/lib/axiosinstance";
+import axiosInstance, { getBackendUrl } from "@/lib/axiosinstance";
 import { useRouter } from "next/router";
 
 const VideoInfo = ({ video }: any) => {
@@ -46,7 +46,7 @@ const VideoInfo = ({ video }: any) => {
 
       if (res.data) {
         // Use NEXT_PUBLIC_ prefixed var so it's available in the browser (Req #4)
-        const backendBase = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
+        const backendBase = getBackendUrl();
         const videoUrl = `${backendBase}/${video.filepath}`;
 
         const link = document.createElement("a");

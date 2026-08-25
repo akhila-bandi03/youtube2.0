@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/router";
-import axiosInstance from "@/lib/axiosinstance";
+import axiosInstance, { getBackendUrl } from "@/lib/axiosinstance";
 import { useUser } from "@/lib/AuthContext";
 import { io, Socket } from "socket.io-client";
 import { 
@@ -100,7 +100,7 @@ export default function WatchPartyRoom() {
   // Initialize Socket and WebRTC Signaling
   useEffect(() => {
     if (!roomId || !user) return;
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
+    const backendUrl = getBackendUrl();
     const s = io(backendUrl);
     setSocket(s);
 

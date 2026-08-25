@@ -15,6 +15,7 @@ import {
   AlertCircle
 } from "lucide-react";
 import { Button } from "./ui/button";
+import { getBackendUrl } from "@/lib/axiosinstance";
 
 interface VideoPlayerProps {
   video: {
@@ -38,7 +39,7 @@ export interface VideoPlayerRef {
 const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(({ video, nextVideoId, onUserPlay, onUserPause, onUserSeek }, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
+  const backendUrl = getBackendUrl();
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);

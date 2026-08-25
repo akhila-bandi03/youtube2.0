@@ -5,7 +5,7 @@ import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { Download, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import axiosInstance from "@/lib/axiosinstance";
+import axiosInstance, { getBackendUrl } from "@/lib/axiosinstance";
 import { useUser } from "@/lib/AuthContext";
 
 // Plan limits for quota display
@@ -19,8 +19,8 @@ export default function DownloadsContent() {
   const [loading, setLoading] = useState(true);
   const { user } = useUser();
 
-  // Use NEXT_PUBLIC_ env var — works in browser (Req #4 fix)
-  const backendBase = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
+  // Use dynamic getBackendUrl helper — works in browser and mobile LAN
+  const backendBase = getBackendUrl();
 
   useEffect(() => {
     if (user) loadDownloads();
