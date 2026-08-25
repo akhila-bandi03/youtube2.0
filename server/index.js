@@ -17,15 +17,11 @@ import watchpartyroutes from "./routes/watchparty.js";
 const app = express();
 const httpServer = createServer(app);
 
-// Socket.io is NOT supported on Vercel Serverless — skip it entirely
-let _io = null;
-if (!process.env.VERCEL) {
-  const { Server } = await import("socket.io");
-  _io = new Server(httpServer, {
-    cors: { origin: "*", methods: ["GET", "POST"] }
-  });
-}
-export const io = _io ?? { on: () => {} }; // no-op dummy on Vercel
+// Socket.io does NOT work on Vercel Serverless (no persistent connections).
+// On Vercel we export a no-op dummy so imports don't break.
+export const io = process.env.VERCEL
+  ? { on: () => {}, emit: () => {}, to: () => ({ emit: () => {} }) }
+  : new Server(httpServer, { cors: { origin: "*", methods: ["GET", "POST"] } });
 
 import path from "path";
 
