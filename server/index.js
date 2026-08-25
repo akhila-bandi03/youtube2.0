@@ -120,6 +120,35 @@ import CommentModel from "./Modals/comment.js";
 import VideoModel from "./Modals/video.js";
 
 const DBURL = process.env.DB_URL || "mongodb://127.0.0.1:27017/youtube";
+
+// Cached connection for Vercel serverless (reuse across warm invocations)
+let dbConnectionPromise = null;
+
+const connectDB = async () => {
+  // If already connected, return immediately
+  if (mongoose.connection.readyState === 1) return;
+  // If a connection is in progress, wait for it
+  if (!dbConnectionPromise) {
+    dbConnectionPromise = mongoose.connect(DBURL, {
+      serverSelectionTimeoutMS: 15000,
+      socketTimeoutMS: 45000,
+    });
+  }
+  await dbConnectionPromise;
+};
+
+// Middleware: ensure DB connected before every request
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    console.error("DB connection failed:", err.message);
+    res.status(503).json({ error: "Database unavailable. Please try again." });
+  }
+});
+
+// Initial connection + seed on first load
 mongoose
   .connect(DBURL)
   .then(async () => {
