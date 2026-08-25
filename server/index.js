@@ -48,7 +48,7 @@ app.use(cors({
 }));
 
 // Explicit OPTIONS preflight handler — needed for localtunnel + CORS
-app.options("*", cors());
+app.options(/.*/, cors());
 
 
 app.use(express.json({ limit: "30mb", extended: true }));
