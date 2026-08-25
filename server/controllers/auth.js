@@ -7,6 +7,10 @@ function generateOTP() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
+function normalizeText(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
 // 1. POST /user/login
 export const login = async (req, res) => {
   const { email, name, image, location, device } = req.body;
@@ -30,9 +34,10 @@ export const login = async (req, res) => {
       // Use simplified device from frontend (just browser name like "Chrome Browser")
       const currentDev = device || req.headers["user-agent"] || "Unknown Device";
 
-      // Only trigger OTP if location OR device has meaningfully changed
-      const isNewLocation = existingUser.lastLocation && existingUser.lastLocation !== currentLoc;
-      const isNewDevice = existingUser.lastDevice && existingUser.lastDevice !== currentDev;
+      // Only trigger OTP if location OR device has meaningfully changed.
+      // Mobile browsers often report platform-specific variations, so normalize before comparing.
+      const isNewLocation = !!existingUser.lastLocation && normalizeText(existingUser.lastLocation) !== normalizeText(currentLoc);
+      const isNewDevice = !!existingUser.lastDevice && normalizeText(existingUser.lastDevice) !== normalizeText(currentDev);
 
       if (isNewLocation || isNewDevice) {
         const otp = generateOTP();
@@ -133,7 +138,7 @@ export const verifyOtp = async (req, res) => {
     user.otpExpiresAt = null;
     user.otpAttempts = 0;
     user.lastLocation = location || user.lastLocation;
-    user.lastDevice = req.headers["user-agent"] || device || user.lastDevice;
+    user.lastDevice = device || req.headers["user-agent"] || user.lastDevice;
     await user.save();
 
     res.status(200).json({ success: true, result: user });

@@ -1,5 +1,5 @@
-import { onAuthStateChanged, signInWithPopup, signOut } from "firebase/auth";
-import { useState, useEffect, createContext, useContext, useCallback } from "react";
+import { onAuthStateChanged, signInWithPopup, signInWithRedirect, getRedirectResult, signOut } from "firebase/auth";
+import { useState, useEffect, createContext, useContext, useCallback, useRef } from "react";
 import { provider, auth } from "./firebase";
 import axiosInstance from "./axiosinstance";
 import dynamic from "next/dynamic";
@@ -12,6 +12,7 @@ const UserContext = createContext();
 export const UserProvider = ({ children }) => {
   const [user, setUser]   = useState(null);
   const [theme, setTheme] = useState("dark");
+  const activeLoginRequestsRef = useRef(new Set());
 
   // OTP modal state — replaces browser prompt()
   const [otpState, setOtpState] = useState(null);
@@ -39,6 +40,22 @@ export const UserProvider = ({ children }) => {
     const ist = new Date(utc + 3600000 * 5.5);
     const hour = ist.getHours();
     return hour >= 10 && hour < 12 ? "light" : "dark";
+  };
+
+  const getDeviceName = () => {
+    if (typeof navigator === "undefined") return "Unknown Device";
+
+    const ua = navigator.userAgent || "";
+    if (/Android/i.test(ua)) return "Android Mobile";
+    if (/iPhone|iPad|iPod/i.test(ua)) return "iOS Mobile";
+    if (/Windows/i.test(ua)) return "Windows Desktop";
+    if (/Macintosh|Mac/i.test(ua)) return "Mac Desktop";
+    if (/Linux/i.test(ua)) return "Linux Desktop";
+    if (/Chrome/i.test(ua)) return "Chrome Browser";
+    if (/Firefox/i.test(ua)) return "Firefox Browser";
+    if (/Safari/i.test(ua)) return "Safari Browser";
+    if (/Edge/i.test(ua)) return "Edge Browser";
+    return "Unknown Device";
   };
 
   // Sync theme from user profile (saved in DB) or IST default
@@ -144,81 +161,103 @@ export const UserProvider = ({ children }) => {
 
   // ─── Core login flow ───
   const processLogin = async (payload) => {
-    // 1. Get approximate IP location
-    let location = "Hyderabad, IN";
-    try {
-      const geoRes  = await fetch("https://ipapi.co/json/");
-      const geoData = await geoRes.json();
-      if (geoData.city && geoData.region) {
-        location = `${geoData.city}, ${geoData.region}`;
-      }
-    } catch (e) {
-      console.log("Geo lookup failed, using default fallback location", e);
-    }
-
-    // Simplified device fingerprint — only browser name to avoid OTP loop on every page refresh
-    const ua = navigator.userAgent;
-    let device = "Unknown Browser";
-    if (ua.includes("Chrome")) device = "Chrome Browser";
-    else if (ua.includes("Firefox")) device = "Firefox Browser";
-    else if (ua.includes("Safari")) device = "Safari Browser";
-    else if (ua.includes("Edge")) device = "Edge Browser";
-    const loginPayload = { ...payload, location, device };
+    const emailKey = String(payload?.email || "").toLowerCase();
+    if (!emailKey) return;
+    if (activeLoginRequestsRef.current.has(emailKey)) return;
+    activeLoginRequestsRef.current.add(emailKey);
 
     try {
-      const response = await axiosInstance.post("/user/login", loginPayload);
-      const data     = response.data;
-
-      if (data.requiresOtp) {
-        // Show proper modal instead of browser prompt()
-        try {
-          await showOtpModal(
-            data.message ||
-              "A security code has been sent to your registered email address.",
-            data.userId,
-            location,
-            device
-          );
-          // login() is called inside onVerify after successful verification
-        } catch (otpErr) {
-          if (otpErr?.message !== "Verification cancelled") {
-            const msg = otpErr?.response?.data?.error || otpErr?.message || "OTP verification failed.";
-            alert(`⚠️ ${msg}`);
-          }
+      // 1. Get approximate IP location
+      let location = "Hyderabad, IN";
+      try {
+        const geoRes  = await fetch("https://ipapi.co/json/");
+        const geoData = await geoRes.json();
+        if (geoData.city && geoData.region) {
+          location = `${geoData.city}, ${geoData.region}`;
         }
-      } else {
-        login(data.result);
+      } catch (e) {
+        console.log("Geo lookup failed, using default fallback location", e);
       }
-    } catch (error) {
-      console.error(error);
-      alert(error.response?.data?.error || "Login verification failed.");
+
+      // Device fingerprint is normalized so the same mobile browser isn't treated as a brand-new device.
+      const device = getDeviceName();
+      const loginPayload = { ...payload, location, device };
+
+      try {
+        const response = await axiosInstance.post("/user/login", loginPayload);
+        const data     = response.data;
+
+        if (data.requiresOtp) {
+          // Show proper modal instead of browser prompt()
+          try {
+            await showOtpModal(
+              data.message ||
+                "A security code has been sent to your registered email address.",
+              data.userId,
+              location,
+              device
+            );
+            // login() is called inside onVerify after successful verification
+          } catch (otpErr) {
+            if (otpErr?.message !== "Verification cancelled") {
+              const msg = otpErr?.response?.data?.error || otpErr?.message || "OTP verification failed.";
+              alert(`⚠️ ${msg}`);
+            }
+          }
+        } else {
+          login(data.result);
+        }
+      } catch (error) {
+        console.error(error);
+        alert(error.response?.data?.error || "Login verification failed.");
+      }
+    } finally {
+      activeLoginRequestsRef.current.delete(emailKey);
     }
   };
 
   // ─── Google Sign-In ───
   const handlegooglesignin = async () => {
     try {
-      const result      = await signInWithPopup(auth, provider);
-      const firebaseuser = result.user;
-      const payload = {
-        email: firebaseuser.email,
-        name:  firebaseuser.displayName,
-        image: firebaseuser.photoURL || "https://github.com/shadcn.png",
-      };
-      await processLogin(payload);
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      if (isMobile) {
+        await signInWithRedirect(auth, provider);
+        // Execution stops here as the page redirects to Google
+      } else {
+        const result      = await signInWithPopup(auth, provider);
+        const firebaseuser = result.user;
+        const payload = {
+          email: firebaseuser.email,
+          name:  firebaseuser.displayName,
+          image: firebaseuser.photoURL || "https://github.com/shadcn.png",
+        };
+        await processLogin(payload);
+      }
     } catch (error) {
-      console.error("Firebase auth failed, falling back to mock session:", error);
-      const mockUserPayload = {
-        email: "testuser@elevance.com",
-        name:  "Bandi Parshamulu",
-        image: "https://github.com/shadcn.png",
-      };
-      await processLogin(mockUserPayload);
+      console.error("Firebase auth failed:", error);
+      alert("Google Sign-In failed. Please try again.");
     }
   };
 
-  // ─── Firebase auth state listener ───
+  // ─── Firebase auth state listener & Redirect Handler ───
   useEffect(() => {
+    // Handle redirect result for mobile logins
+    getRedirectResult(auth)
+      .then(async (result) => {
+        if (result && result.user) {
+          const firebaseuser = result.user;
+          const payload = {
+            email: firebaseuser.email,
+            name:  firebaseuser.displayName,
+            image: firebaseuser.photoURL || "https://github.com/shadcn.png",
+          };
+          await processLogin(payload);
+        }
+      })
+      .catch((error) => {
+        console.error("Redirect auth error:", error);
+      });
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseuser) => {
       if (firebaseuser) {
         // If user already restored from localStorage, skip re-login to avoid OTP loop
