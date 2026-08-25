@@ -1,4 +1,4 @@
-import { onAuthStateChanged, signInWithPopup, signInWithRedirect, getRedirectResult, signOut } from "firebase/auth";
+import { onAuthStateChanged, signInWithRedirect, getRedirectResult, signOut } from "firebase/auth";
 import { useState, useEffect, createContext, useContext, useCallback, useRef } from "react";
 import { provider, auth } from "./firebase";
 import axiosInstance from "./axiosinstance";
@@ -217,24 +217,13 @@ export const UserProvider = ({ children }) => {
   };
 
   // ─── Google Sign-In ───
+  // Uses redirect for ALL devices — eliminates all popup conflict errors.
+  // Result is handled by getRedirectResult() in the useEffect below.
   const handlegooglesignin = async () => {
     try {
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-      if (isMobile) {
-        await signInWithRedirect(auth, provider);
-        // Execution stops here as the page redirects to Google
-      } else {
-        const result      = await signInWithPopup(auth, provider);
-        const firebaseuser = result.user;
-        const payload = {
-          email: firebaseuser.email,
-          name:  firebaseuser.displayName,
-          image: firebaseuser.photoURL || "https://github.com/shadcn.png",
-        };
-        await processLogin(payload);
-      }
+      await signInWithRedirect(auth, provider);
     } catch (error) {
-      console.error("Firebase auth failed:", error);
+      console.error("Firebase redirect failed:", error);
       alert("Google Sign-In failed. Please try again.");
     }
   };
