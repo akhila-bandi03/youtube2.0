@@ -65,6 +65,19 @@ app.use("/comment", commentroutes);
 app.use("/api", apiroutes);
 app.use("/watchparty", watchpartyroutes);
 
+// Debug endpoint to check DB connection status and env variables on Vercel
+app.get("/debug", (req, res) => {
+  const dbUrl = process.env.DB_URL || "";
+  res.json({
+    vercel: !!process.env.VERCEL,
+    mongooseState: mongoose.connection.readyState, // 0 = disconnected, 1 = connected, 2 = connecting, 3 = disconnecting
+    hasDbUrl: !!dbUrl,
+    dbUrlLength: dbUrl.length,
+    dbUrlPrefix: dbUrl.substring(0, 15),
+    nodeEnv: process.env.NODE_ENV,
+  });
+});
+
 // Socket.IO Logic — only active when NOT on Vercel
 if (!process.env.VERCEL && io && typeof io.on === "function" && io.on.length > 0) {
   io.on("connection", (socket) => {
