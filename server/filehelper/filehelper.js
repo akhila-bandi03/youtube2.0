@@ -1,33 +1,26 @@
 "use strict";
 import multer from "multer";
-import path from "path";
-import fs from "fs";
 
-// Ensure uploads directory exists
-const uploadDir = path.join(process.cwd(), "uploads");
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "uploads");
-  },
-  filename: (req, file, cb) => {
-    cb(
-      null,
-      new Date().toISOString().replace(/:/g, "-") + "-" + file.originalname
-    );
-  },
-});
+// Use memory storage instead of disk storage — Vercel serverless has no
+// persistent filesystem, so we buffer the file in memory and upload to
+// Cloudinary from the controller.
+const storage = multer.memoryStorage();
 
 const filefilter = (req, file, cb) => {
-  if (file.mimetype === "video/mp4") {
+  // Accept all video types (mp4, webm, mov, avi, etc.)
+  if (file.mimetype.startsWith("video/")) {
     cb(null, true);
   } else {
     cb(null, false);
   }
 };
 
-const upload = multer({ storage: storage, fileFilter: filefilter });
+// 200 MB limit — large enough for most uploads; Vercel free tier caps at 4.5 MB
+// body but Vercel Pro / self-hosted removes that restriction.
+const upload = multer({
+  storage: storage,
+  fileFilter: filefilter,
+  limits: { fileSize: 200 * 1024 * 1024 }, // 200 MB
+});
+
 export default upload;
