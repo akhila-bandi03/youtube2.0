@@ -343,7 +343,7 @@ export default function WatchPartyRoom() {
             <Button 
               variant="outline" 
               onClick={copyInviteLink}
-              className="text-slate-800 border-slate-700 bg-white hover:bg-slate-100 flex items-center gap-1.5 text-xs px-3 py-1.5"
+              className="bg-violet-600 hover:bg-violet-700 text-white border-violet-500 flex items-center gap-1.5 text-xs px-3 py-1.5 font-semibold"
             >
               <Copy className="w-3.5 h-3.5" />
               Copy Invite Link
