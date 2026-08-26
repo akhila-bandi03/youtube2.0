@@ -93,7 +93,7 @@ export const savevideo = async (req, res) => {
     return res.status(201).json({ message: "Video saved successfully", video: savedVideo });
   } catch (error) {
     console.error("Save video error:", error);
-    return res.status(500).json({ message: "Something went wrong saving video" });
+    return res.status(500).json({ message: error.message || "Something went wrong saving video", stack: error.stack });
   }
 };
 

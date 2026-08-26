@@ -115,7 +115,7 @@ const VideoUploader = ({ channelId, channelName, onUploadSuccess }: any) => {
       resetForm();
     } catch (error: any) {
       console.error("Error uploading video:", error);
-      toast.error(error?.message || "There was an error uploading your video. Please try again.");
+      toast.error(error?.response?.data?.message || error?.message || "There was an error uploading your video. Please try again.");
     } finally {
       setIsUploading(false);
     }
