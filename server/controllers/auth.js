@@ -100,8 +100,8 @@ export const login = async (req, res) => {
       return res.status(200).json({ result: existingUser });
     }
   } catch (error) {
-    console.error("Login error:", error);
-    return res.status(500).json({ message: "Something went wrong" });
+    console.error("Login error:", error?.message || error);
+    return res.status(500).json({ message: error?.message || "Something went wrong" });
   }
 };
 
