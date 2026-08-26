@@ -55,18 +55,37 @@ app.use("/uploads", express.static(path.join("uploads")));
 app.get("/", (req, res) => {
   res.send("You tube backend is working");
 });
-// Cached DB connection — prevents cold-start timeouts on Vercel serverless
 const DBURL = process.env.DB_URL || "mongodb://127.0.0.1:27017/youtube";
 let dbConnectionPromise = null;
+
 const connectDB = async () => {
-  if (mongoose.connection.readyState === 1) return; // already connected
-  if (!dbConnectionPromise) {
-    dbConnectionPromise = mongoose.connect(DBURL, {
-      serverSelectionTimeoutMS: 15000,
-      socketTimeoutMS: 45000,
-    });
+  const state = mongoose.connection.readyState;
+  
+  // 1 = Connected. We can return immediately.
+  if (state === 1) return;
+
+  // 2 = Connecting. We wait for the existing connection attempt to complete.
+  if (state === 2 && dbConnectionPromise) {
+    await dbConnectionPromise;
+    return;
   }
-  await dbConnectionPromise;
+
+  // If disconnected (0) or disconnecting (3), or no active promise, start a new connection.
+  console.log(`DB connection state is ${state}. Initializing new connection to MongoDB...`);
+  
+  dbConnectionPromise = mongoose.connect(DBURL, {
+    serverSelectionTimeoutMS: 8000,
+    socketTimeoutMS: 45000,
+  });
+
+  try {
+    await dbConnectionPromise;
+    console.log("Successfully connected to MongoDB.");
+  } catch (err) {
+    console.error("Mongoose connection attempt failed:", err.message);
+    dbConnectionPromise = null; // Clear cached promise on failure so next request can try again
+    throw err;
+  }
 };
 
 // Ensure DB is connected before every request (critical for Vercel cold starts)
