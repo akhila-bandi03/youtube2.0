@@ -209,7 +209,8 @@ export const UserProvider = ({ children }) => {
         }
       } catch (error) {
         console.error(error);
-        alert(error.response?.data?.error || "Login verification failed.");
+        const errMsg = error.response?.data?.error || error.response?.data?.message || "Login verification failed.";
+        alert(errMsg);
       }
     } finally {
       activeLoginRequestsRef.current.delete(emailKey);
