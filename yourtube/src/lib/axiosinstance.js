@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const configuredBackendUrl =
-  process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || "http://localhost:5000";
+  process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || "https://youtube-api-backend-v2.loca.lt";
 
 export const getBackendUrl = () => {
   if (typeof window !== "undefined") {

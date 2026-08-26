@@ -13,32 +13,10 @@ export const uploadvideo = async (req, res) => {
       .json({ message: "plz upload a mp4 video file only" });
   } else {
     try {
-      // Helper function to stream buffer to Cloudinary
-      const uploadToCloudinary = (buffer) => {
-        return new Promise((resolve, reject) => {
-          const uploadStream = cloudinary.uploader.upload_stream(
-            {
-              resource_type: "video",
-              folder: "youtube_clone",
-            },
-            (error, result) => {
-              if (error) {
-                console.error("Cloudinary upload failed:", error);
-                return reject(error);
-              }
-              resolve(result);
-            }
-          );
-          uploadStream.end(buffer);
-        });
-      };
-
-      const cloudinaryResult = await uploadToCloudinary(req.file.buffer);
-
       const file = new video({
         videotitle: req.body.videotitle,
         filename: req.file.originalname,
-        filepath: cloudinaryResult.secure_url, // Store the full secure Cloudinary URL
+        filepath: req.file.path.replace(/\\/g, "/"), // Save local file path
         filetype: req.file.mimetype,
         filesize: req.file.size,
         videochanel: req.body.videochanel,
