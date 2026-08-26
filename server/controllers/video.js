@@ -67,6 +67,36 @@ export const uploadvideo = async (req, res) => {
   }
 };
 
+// POST /video/save — frontend uploads directly to Cloudinary, then calls this
+// to save only the metadata + Cloudinary URL into MongoDB. No file passes through our server.
+export const savevideo = async (req, res) => {
+  const { videotitle, filename, filepath, filetype, filesize, videochanel, uploader } = req.body;
+
+  if (!videotitle || !filepath) {
+    return res.status(400).json({ message: "videotitle and filepath are required" });
+  }
+
+  try {
+    const file = new video({
+      videotitle,
+      filename: filename || "video",
+      filepath,   // ← Cloudinary HTTPS URL sent from frontend
+      filetype: filetype || "video/mp4",
+      filesize: filesize || "0",
+      videochanel: videochanel || "Unknown",
+      uploader: uploader || "",
+    });
+
+    const savedVideo = await file.save();
+    io.emit("new-video", savedVideo);
+
+    return res.status(201).json({ message: "Video saved successfully", video: savedVideo });
+  } catch (error) {
+    console.error("Save video error:", error);
+    return res.status(500).json({ message: "Something went wrong saving video" });
+  }
+};
+
 export const getallvideo = async (req, res) => {
   try {
     const files = await video.find();

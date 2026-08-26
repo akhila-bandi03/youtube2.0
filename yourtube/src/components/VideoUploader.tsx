@@ -56,33 +56,66 @@ const VideoUploader = ({ channelId, channelName, onUploadSuccess }: any) => {
       toast.error("Please provide file and title");
       return;
     }
-    const finalTitle = videoType === "short" && !videoTitle.toLowerCase().includes("#shorts")
-      ? `${videoTitle} #shorts`
-      : videoTitle;
+    const finalTitle =
+      videoType === "short" && !videoTitle.toLowerCase().includes("#shorts")
+        ? `${videoTitle} #shorts`
+        : videoTitle;
 
-    const formdata = new FormData();
-    formdata.append("file", videoFile);
-    formdata.append("videotitle", finalTitle);
-    formdata.append("videochanel", channelName);
-    formdata.append("uploader", channelId);
-    console.log(formdata)
     try {
       setIsUploading(true);
       setUploadProgress(0);
-      const res = await axiosInstance.post("/video/upload", formdata, {
-        onUploadProgress: (progresEvent: any) => {
-          const progress = Math.round(
-            (progresEvent.loaded * 100) / progresEvent.total
-          );
-          setUploadProgress(progress);
-        },
+
+      // ── Step 1: Upload directly to Cloudinary from the browser ──
+      // This bypasses Vercel's 4.5MB serverless body limit entirely.
+      const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "dp5s2k2uo";
+      const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "youtube_unsigned";
+
+      const cloudFormData = new FormData();
+      cloudFormData.append("file", videoFile);
+      cloudFormData.append("upload_preset", UPLOAD_PRESET);
+      cloudFormData.append("resource_type", "video");
+      cloudFormData.append("folder", "youtube_videos");
+
+      const cloudinaryUrl = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/video/upload`;
+
+      // Use XHR so we can track upload progress
+      const secureUrl: string = await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", cloudinaryUrl);
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            setUploadProgress(Math.round((e.loaded * 100) / e.total));
+          }
+        };
+        xhr.onload = () => {
+          if (xhr.status === 200) {
+            const data = JSON.parse(xhr.responseText);
+            resolve(data.secure_url);
+          } else {
+            reject(new Error(`Cloudinary upload failed: ${xhr.responseText}`));
+          }
+        };
+        xhr.onerror = () => reject(new Error("Network error during Cloudinary upload"));
+        xhr.send(cloudFormData);
       });
-      toast.success("Upload successfully");
+
+      // ── Step 2: Save metadata + Cloudinary URL to our backend ──
+      await axiosInstance.post("/video/save", {
+        videotitle: finalTitle,
+        filename: videoFile.name,
+        filepath: secureUrl,
+        filetype: videoFile.type,
+        filesize: String(videoFile.size),
+        videochanel: channelName,
+        uploader: channelId,
+      });
+
+      toast.success("Video uploaded successfully!");
       if (onUploadSuccess) onUploadSuccess();
       resetForm();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error uploading video:", error);
-      toast.error("There was an error uploading your video. Please try again.");
+      toast.error(error?.message || "There was an error uploading your video. Please try again.");
     } finally {
       setIsUploading(false);
     }
