@@ -100,9 +100,10 @@ export default function WatchPartyRoom() {
   // Initialize Socket and WebRTC Signaling
   useEffect(() => {
     if (!roomId || !user) return;
-    // Use dedicated Railway socket server — Vercel serverless doesn't support WebSockets
+    // Use dedicated socket server (Render.com) that supports persistent WebSockets.
+    // Falls back to main backend for local dev.
     const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || getBackendUrl();
-    const s = io(socketUrl, { transports: ["websocket", "polling"] });
+    const s = io(socketUrl);
     setSocket(s);
 
     s.emit("join-room", roomId, user._id, user.name);

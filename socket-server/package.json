@@ -1,13 +1,12 @@
 {
-  "name": "yourtube-socket-server",
+  "name": "watch-party-socket-server",
   "version": "1.0.0",
-  "description": "Standalone Socket.io server for YourTube Watch Party feature",
-  "main": "index.js",
   "type": "module",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
+    "express": "^5.1.0",
     "socket.io": "^4.8.3"
   }
 }
