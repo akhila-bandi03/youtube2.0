@@ -41,13 +41,19 @@ const Videogrid = ({ activeCategory }: { activeCategory: string }) => {
     };
     fetchvideo();
 
-    // Set up WebSocket connection for true real-time updates
+    // Socket.io only works locally — Vercel serverless has no persistent connections.
+    // Skip socket connection in production to avoid CORS + 404 flood.
+    const isLocal =
+      typeof window !== "undefined" &&
+      (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+
+    if (!isLocal) return; // No socket on Vercel
+
     const backendUrl = getBackendUrl();
     const newSocket = io(backendUrl);
     setSocket(newSocket);
 
     newSocket.on("new-video", (newVideo: any) => {
-      // Add the new video to the top of the list instantly
       setvideo((prevVideos) => [newVideo, ...prevVideos]);
     });
 
