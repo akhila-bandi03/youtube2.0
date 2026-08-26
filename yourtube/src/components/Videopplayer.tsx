@@ -253,12 +253,10 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(({ video, nextV
           setIsBuffering(false);
         }}
         className="w-full h-full cursor-pointer"
-        poster={`/placeholder.svg?height=480&width=854`}
+        crossOrigin="anonymous"
       >
-        <source
-          src={getVideoUrl(video?.filepath)}
-          type="video/mp4"
-        />
+        {/* No fixed type — browser auto-detects from response headers */}
+        <source src={getVideoUrl(video?.filepath)} />
         Your browser does not support the video tag.
       </video>
 
