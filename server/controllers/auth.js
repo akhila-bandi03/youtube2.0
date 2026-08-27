@@ -11,6 +11,13 @@ function normalizeText(value) {
   return String(value || "").trim().toLowerCase();
 }
 
+function getISTHour() {
+  const options = { timeZone: 'Asia/Kolkata', hour: 'numeric', hour12: false };
+  const formatter = new Intl.DateTimeFormat('en-US', options);
+  const istHourStr = formatter.format(new Date());
+  return parseInt(istHourStr, 10);
+}
+
 // 1. POST /user/login
 export const login = async (req, res) => {
   const { email, name, image, location, device } = req.body;
@@ -20,12 +27,15 @@ export const login = async (req, res) => {
 
     if (!existingUser) {
       // New user registration
+      const hour = getISTHour();
+      const selectedTheme = (hour >= 10 && hour < 12) ? "light" : "dark";
       const newUser = await users.create({ 
         email, 
         name, 
         image,
         lastLocation: location || "Unknown Region",
-        lastDevice: device || "Unknown Device"
+        lastDevice: device || "Unknown Device",
+        theme: selectedTheme
       });
       return res.status(201).json({ result: newUser });
     } else {
@@ -95,6 +105,8 @@ export const login = async (req, res) => {
       // Same location/device: proceed to login and ensure fields are populated
       if (!existingUser.lastLocation) existingUser.lastLocation = currentLoc;
       if (!existingUser.lastDevice) existingUser.lastDevice = currentDev;
+      const hour = getISTHour();
+      existingUser.theme = (hour >= 10 && hour < 12) ? "light" : "dark";
       await existingUser.save();
 
       return res.status(200).json({ result: existingUser });
@@ -139,6 +151,8 @@ export const verifyOtp = async (req, res) => {
     user.otpAttempts = 0;
     user.lastLocation = location || user.lastLocation;
     user.lastDevice = device || req.headers["user-agent"] || user.lastDevice;
+    const hour = getISTHour();
+    user.theme = (hour >= 10 && hour < 12) ? "light" : "dark";
     await user.save();
 
     res.status(200).json({ success: true, result: user });

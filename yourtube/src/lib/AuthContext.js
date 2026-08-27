@@ -35,11 +35,19 @@ export const UserProvider = ({ children }) => {
 
   // ─── IST-based default theme: light 10am–12pm, dark otherwise ───
   const getISTDefaultTheme = () => {
-    const d   = new Date();
-    const utc = d.getTime() + d.getTimezoneOffset() * 60000;
-    const ist = new Date(utc + 3600000 * 5.5);
-    const hour = ist.getHours();
-    return hour >= 10 && hour < 12 ? "light" : "dark";
+    try {
+      const options = { timeZone: 'Asia/Kolkata', hour: 'numeric', hour12: false };
+      const formatter = new Intl.DateTimeFormat('en-US', options);
+      const istHourStr = formatter.format(new Date());
+      const hour = parseInt(istHourStr, 10);
+      return hour >= 10 && hour < 12 ? "light" : "dark";
+    } catch (e) {
+      const d   = new Date();
+      const utc = d.getTime() + d.getTimezoneOffset() * 60000;
+      const ist = new Date(utc + 3600000 * 5.5);
+      const hour = ist.getHours();
+      return hour >= 10 && hour < 12 ? "light" : "dark";
+    }
   };
 
   const getDeviceName = () => {
