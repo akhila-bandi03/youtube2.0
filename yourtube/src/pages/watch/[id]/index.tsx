@@ -106,6 +106,14 @@ const index = () => {
                   }
                   return video[0]?._id; // loop back to first
                 })()}
+                nextVideoTitle={(() => {
+                  if (!video || !Array.isArray(video)) return undefined;
+                  const currentIndex = video.findIndex((v: any) => v._id === id);
+                  if (currentIndex !== -1 && currentIndex < video.length - 1) {
+                    return video[currentIndex + 1].videotitle;
+                  }
+                  return video[0]?.videotitle; // loop back to first
+                })()}
               />
             )}
             <VideoInfo video={videos} />
